@@ -1,6 +1,6 @@
 import React from 'react'
 
-export const Community = () => {
+const Community = () => {
   return (
     <div>
         <h1>Community</h1>

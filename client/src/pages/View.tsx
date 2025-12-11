@@ -1,6 +1,6 @@
 import React from 'react'
 
-export const View = () => {
+const View = () => {
   return (
     <div>
         <h1>View</h1>

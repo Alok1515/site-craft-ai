@@ -1,6 +1,6 @@
 import React from 'react'
 
-export const Pricing = () => {
+const Pricing = () => {
   return (
     <div>
         <h1>Pricing</h1>

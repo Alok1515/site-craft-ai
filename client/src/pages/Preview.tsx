@@ -1,6 +1,6 @@
 import React from 'react'
 
-export const Preview = () => {
+const Preview = () => {
   return (
     <div>
         <h1>Preview</h1>
