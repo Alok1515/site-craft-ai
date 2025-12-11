@@ -10,9 +10,12 @@ import Community from './pages/community'
 
 
 import { View } from "lucide-react";
+import Navbar from './components/Navbar'
 
 const App = () => {
   return (
+    <div>
+      <Navbar />
     <Routes>
       <Route path='/' element={<HomePage />} />       {/* ✅ fixed */}
       <Route path='/pricing' element={<Pricing />} />
@@ -23,6 +26,7 @@ const App = () => {
       <Route path='/community' element={<Community />} />
       <Route path='/view/:projectId' element={<View />} /> {/* icon route? */}
     </Routes>
+    </div>
   )
 }
 
