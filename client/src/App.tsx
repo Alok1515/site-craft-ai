@@ -1,5 +1,5 @@
 import React from 'react'
-import { Route, Routes } from 'react-router-dom'
+import { Route, Routes, useLocation } from 'react-router-dom'
 
 import HomePage from './pages/Home'     
 import Pricing from './pages/Pricing'
@@ -11,11 +11,20 @@ import Community from './pages/community'
 
 import { View } from "lucide-react";
 import Navbar from './components/Navbar'
+import path from 'path'
 
 const App = () => {
+
+  const {pathname} = useLocation()
+
+  const hideNavbar = pathname.startsWith('/projects') && pathname !== '/projects'
+                    || pathname.startsWith('/view')
+                    || pathname.startsWith('/preview')
+
   return (
     <div>
-      <Navbar />
+      {!hideNavbar && <Navbar />}
+
     <Routes>
       <Route path='/' element={<HomePage />} />       {/* ✅ fixed */}
       <Route path='/pricing' element={<Pricing />} />
