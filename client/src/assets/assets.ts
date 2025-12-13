@@ -161,92 +161,123 @@ export const dummyVersion = [
 ]
 
 export const iframeScript = `
-        <style id="ai-preview-style">
-        .ai-selected-element {
-            outline: 2px solid #6366f1 !important;
+<style>
+  .ai-selected-element {
+    outline: 2px solid #6366f1 !important;
+    box-shadow: 0 0 0 2px rgba(99,102,241,0.2);
+  }
+</style>
+
+<script>
+(function () {
+  if (window === window.parent) return;
+
+  let selectedElement = null;
+
+  function safePost(msg) {
+    try {
+      window.parent.postMessage(msg, "*");
+    } catch (err) {}
+  }
+
+  function clearSelected() {
+    try {
+      if (selectedElement) {
+        selectedElement.classList.remove("ai-selected-element");
+        selectedElement.removeAttribute("data-ai-selected");
+        selectedElement = null;
+      }
+    } catch (err) {}
+  }
+
+  function getClickableElement(e) {
+    if (typeof e.composedPath === "function") {
+      const path = e.composedPath();
+      for (const p of path) {
+        if (p?.nodeType === Node.ELEMENT_NODE) return p;
+      }
+    }
+    return e.target?.nodeType === Node.ELEMENT_NODE ? e.target : e.target.parentElement;
+  }
+
+  document.addEventListener(
+    "click",
+    function (e) {
+      try {
+        const target = getClickableElement(e);
+        if (!target) return;
+
+        // Only prevent default for links
+        const anchor = target.closest("a[href]");
+        if (anchor) e.preventDefault();
+        e.stopPropagation();
+
+        if (!target || ["HTML", "BODY"].includes(target.tagName)) {
+          clearSelected();
+          safePost({ type: "CLEAR_SELECTION" });
+          return;
         }
-        </style>
-        <script id="ai-preview-script">
-        (function () {
-            // If this HTML is opened directly (not in an iframe), do nothing.
-            if (window === window.parent) {
-            return;
+
+        clearSelected();
+
+        selectedElement = target;
+        selectedElement.classList.add("ai-selected-element");
+        selectedElement.setAttribute("data-ai-selected", "true");
+
+        const cs = window.getComputedStyle(selectedElement);
+
+        const text =
+          selectedElement.tagName === "INPUT" || selectedElement.tagName === "TEXTAREA"
+            ? selectedElement.value
+            : selectedElement.innerText;
+
+        safePost({
+          type: "ELEMENT_SELECTED",
+          payload: {
+            tagName: selectedElement.tagName,
+            className: selectedElement.className,
+            text,
+            styles: {
+              padding: cs.padding,
+              margin: cs.margin,
+              backgroundColor: cs.backgroundColor,
+              color: cs.color,
+              fontSize: cs.fontSize
             }
+          }
+        });
+      } catch (err) {}
+    },
+    true
+  );
 
-            let selectedElement = null;
+  window.addEventListener("message", function (event) {
+    try {
+      const data = event.data;
 
-            function clearSelected() {
-            if (selectedElement) {
-                selectedElement.classList.remove('ai-selected-element');
-                selectedElement.removeAttribute('data-ai-selected');
-                selectedElement.style.outline = '';
-                selectedElement = null;
-            }
-            }
+      if (data.type === "UPDATE_ELEMENT" && selectedElement) {
+        const updates = data.payload;
 
-            document.addEventListener('click', function (e) {
-            e.preventDefault();
-            e.stopPropagation();
+        if (updates.className !== undefined) {
+          selectedElement.className = updates.className;
+        }
+        if (updates.text !== undefined) {
+          if (selectedElement.tagName === "INPUT" || selectedElement.tagName === "TEXTAREA") {
+            selectedElement.value = updates.text;
+          } else {
+            selectedElement.innerText = updates.text;
+          }
+        }
+        if (updates.styles) {
+          Object.assign(selectedElement.style, updates.styles);
+        }
+      }
 
-            clearSelected();
-
-            const target = e.target;
-
-            // Don't select body or html
-            if (!target || target.tagName === 'BODY' || target.tagName === 'HTML') {
-                window.parent.postMessage({ type: 'CLEAR_SELECTION' }, '*');
-                return;
-            }
-
-            selectedElement = target;
-            selectedElement.classList.add('ai-selected-element');
-            selectedElement.setAttribute('data-ai-selected', 'true');
-
-            const computedStyle = window.getComputedStyle(selectedElement);
-
-            window.parent.postMessage({
-                type: 'ELEMENT_SELECTED',
-                payload: {
-                tagName: selectedElement.tagName,
-                className: selectedElement.className,
-                text: selectedElement.innerText,
-                styles: {
-                    padding: computedStyle.padding,
-                    margin: computedStyle.margin,
-                    backgroundColor: computedStyle.backgroundColor,
-                    color: computedStyle.color,
-                    fontSize: computedStyle.fontSize
-                }
-                }
-            }, '*');
-            });
-
-            window.addEventListener('message', function (event) {
-            if (event.data.type === 'UPDATE_ELEMENT' && selectedElement) {
-                const updates = event.data.payload;
-
-                if (updates.className !== undefined) {
-                selectedElement.className = updates.className;
-                }
-
-                if (updates.text !== undefined) {
-                selectedElement.innerText = updates.text;
-                }
-
-                if (updates.styles) {
-                Object.assign(selectedElement.style, updates.styles);
-                }
-            } else if (event.data.type === 'CLEAR_SELECTION_REQUEST') {
-                clearSelected();
-
-                // extra safety: remove our class + outline from any stray elements
-                document.querySelectorAll('.ai-selected-element,[data-ai-selected]').forEach(function (el) {
-                el.classList.remove('ai-selected-element');
-                el.removeAttribute('data-ai-selected');
-                el.style.outline = '';
-                });
-            }
-            });
-        })();
-        </script>
+      if (data.type === "CLEAR_SELECTION_REQUEST") {
+        clearSelected();
+      }
+    } catch (err) {}
+  });
+})();
+</script>
 `;

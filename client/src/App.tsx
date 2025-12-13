@@ -9,7 +9,8 @@ import Preview from './pages/preview'
 import Community from './pages/community'
 
 
-import { View } from "lucide-react";
+import View from "./pages/View";
+
 import Navbar from './components/Navbar'
 import path from 'path'
 
@@ -26,14 +27,14 @@ const App = () => {
       {!hideNavbar && <Navbar />}
 
     <Routes>
-      <Route path='/' element={<HomePage />} />       {/* ✅ fixed */}
+      <Route path='/' element={<HomePage />} />       
       <Route path='/pricing' element={<Pricing />} />
       <Route path='/projects/:projectId' element={<Projects />} />
       <Route path='/projects' element={<MyProjects />} />
       <Route path='/preview/:projectId' element={<Preview />} />
       <Route path='/preview/:projectId/:versionId' element={<Preview />} />
       <Route path='/community' element={<Community />} />
-      <Route path='/view/:projectId' element={<View />} /> {/* icon route? */}
+      <Route path='/view/:projectId' element={<View />} /> 
     </Routes>
     </div>
   )
