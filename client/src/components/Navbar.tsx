@@ -1,14 +1,35 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { assets } from '../assets/assets';
 import { Link, useNavigate } from 'react-router-dom';
 import { authClient } from '@/lib/auth-client';
 import {UserButton} from '@daveyplate/better-auth-ui'
+import api from '@/configs/axios';
+import { toast } from 'sonner';
 
 const Navbar = () => {
     const [menuOpen, setMenuOpen] = React.useState(false);
     const navigate = useNavigate()
+    const [credits, setCredits] = useState(0)
 
     const {data: session} = authClient.useSession()
+
+    const getCredits = async ()=> {
+       try {
+         const {data} = await api.get('/api/user/credits');
+         setCredits(data.credits)
+
+       } catch (error: any) {
+          toast.error(error?.response?.data?.message || error.message)
+          console.log(error);
+       }
+    }
+
+    useEffect(()=> {
+      if(session?.user) {
+        getCredits()
+      }
+    }, [session?.user])
+
 
   return (
     <>
@@ -33,7 +54,12 @@ const Navbar = () => {
               Get started
             </button>
             ) : (
+              <>
+              <button className='bg-white/10 px-5 py1.5 text-xs sm:text-sm border 
+              text-gray-200 rounded-full'>Credits : <span className='text-indigo-300'>{credits}</span>
+              </button>
               <UserButton size='icon' />
+              </>
             )   
             }
 

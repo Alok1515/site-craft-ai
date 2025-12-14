@@ -8,6 +8,7 @@ import React, {
 import type { Project } from "../types";
 import { iframeScript } from "../assets/assets";
 import EditorPanel from "./EditorPanel";
+import LoaderSteps from "./LoaderSteps";
 
 interface ProjectPreviewProps {
   project: Project;
@@ -109,11 +110,7 @@ const ProjectPreview = forwardRef<ProjectPreviewRef, ProjectPreviewProps>(
       return html + iframeScript;
     };
 
-    // Expose getCode to parent
-    useImperativeHandle(ref, () => ({
-      getCode: () => iframeRef.current?.srcdoc,
-    }));
-
+   
     return (
       <div className="relative h-full flex-1 bg-gray-900 rounded-xl overflow-hidden">
         {project.current_code ? (
@@ -140,9 +137,7 @@ const ProjectPreview = forwardRef<ProjectPreviewRef, ProjectPreviewProps>(
           </>
         ) : (
           isGenerating && (
-            <div className="flex items-center justify-center h-full text-gray-400">
-              Generating website preview…
-            </div>
+            <LoaderSteps />
           )
         )}
       </div>
