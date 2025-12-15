@@ -52,7 +52,7 @@ import { toast } from 'sonner';
         </h1>
 
         <p className="text-center text-base max-w-md mt-2">
-          Create, customize and present faster than ever with intelligent design powered by Site Builder
+          Create, customize and present faster than ever with intelligent design powered by Site Craft AI
         </p>
 
         <form onSubmit={onSubmitHandler} className="bg-white/10 max-w-2xl w-full rounded-xl p-4 mt-10 border border-indigo-600/70 focus-within:ring-2 ring-indigo-500 transition-all">
