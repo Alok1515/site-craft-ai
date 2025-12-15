@@ -2,8 +2,9 @@ import { Request, response, Response } from "express"
 import prisma from "../lib/prisma.js";
 import openai from "../configs/openai.js";
 import { role } from "better-auth/client";
-import { optional } from "better-auth";
+import { date, optional } from "better-auth";
 import { timeStamp } from "node:console";
+import Stripe from "stripe";
 
 // Get User Credits
 export const getUserCredits = async(req: Request, res: Response) => {
@@ -296,5 +297,66 @@ export const togglePublish = async(req: Request, res: Response) => {
 
 // controller function to Purchase credit
 export const purchaseCredit = async(req: Request, res: Response) => {
-   
+   try {
+     interface Plan {
+        credits: number;
+        amount: number;
+     }
+
+     const plans = {
+        basic: {credits: 100, amount: 5},
+        pro: {credits: 400, amount: 19},
+        enterprise: {credits: 1000, amount: 49},
+     }
+
+     const userId = req.userId;
+     const {planId} = req.body as {planId : keyof typeof plans}
+     const origin = req.headers.origin as string;
+
+     const plan: Plan = plans[planId]
+
+     if(!plan) {
+        return res.status(404).json({message: 'Plan not found'});
+     }
+
+     const transaction = await prisma.transaction.create({
+        data: {
+            userId: userId!,
+            planId: req.body.planId,
+            amount: plan.amount,
+            credits: plan.credits
+        }
+     })
+
+      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
+
+      const session = await stripe.checkout.sessions.create({
+        success_url: `${origin}/loading`,
+        cancel_url: `${origin}`,
+        line_items: [
+            {
+            price_data: {
+                currency:'usd',
+                product_data: {
+                    name: `Site Craft AI - ${plan.credits} credits`
+                },
+                unit_amount: Math.floor(transaction.amount) * 100
+            },
+            quantity: 1
+            },
+        ],
+        mode: 'payment',
+        metadata: {
+            transactionId: transaction.id,
+            appId: 'site-craft-ai'
+        },
+        expires_at: Math.floor(Date.now() / 1000) + 30 * 60, // Expires in 30 minutes
+        });
+
+        res.json({payment_link: session.url})
+
+   } catch (error : any) {
+        console.log(error.code || error.message);
+        res.status(500).json({message: error.message});
+   }
 }
